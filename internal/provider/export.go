@@ -131,20 +131,13 @@ var defaultCategories = []string{
 }
 
 func ExportDocs(ctx context.Context, client APIClient, opts ExportOptions) (*ExportSummary, error) {
-	if err := validateExportOptions(&opts); err != nil {
+	ext, err := prepareExportOptions(&opts)
+	if err != nil {
 		return nil, err
 	}
 
 	providerVersionID, err := resolveProviderVersionID(ctx, client, opts.Namespace, opts.Name, opts.Version)
 	if err != nil {
-		return nil, err
-	}
-
-	ext, err := extensionForFormat(opts.Format)
-	if err != nil {
-		return nil, &ValidationError{Message: err.Error()}
-	}
-	if err := validatePathTemplate(opts, ext); err != nil {
 		return nil, err
 	}
 
@@ -283,6 +276,11 @@ func ExportDocs(ctx context.Context, client APIClient, opts ExportOptions) (*Exp
 		Written:  len(planned),
 		Manifest: filepath.ToSlash(filepath.Join(opts.OutDir, relManifestPath)),
 	}, nil
+}
+
+func PreflightExportOptions(opts *ExportOptions) error {
+	_, err := prepareExportOptions(opts)
+	return err
 }
 
 func validateExportOptions(opts *ExportOptions) error {
@@ -553,10 +551,29 @@ func validatePathTemplate(opts ExportOptions, ext string) error {
 		"doc_id":    "validation",
 		"ext":       ext,
 	}
-	if _, err := BuildOutputPath(opts.PathTemplate, vars, opts.OutDir); err != nil {
+	filePath, err := BuildOutputPath(opts.PathTemplate, vars, opts.OutDir)
+	if err != nil {
 		return &ValidationError{Message: err.Error()}
 	}
+	if filePath == manifestPathForOptions(opts) {
+		return &ValidationError{Message: fmt.Sprintf("path collision detected in --path-template: %s conflicts with reserved manifest path", filePath)}
+	}
 	return nil
+}
+
+func prepareExportOptions(opts *ExportOptions) (string, error) {
+	if err := validateExportOptions(opts); err != nil {
+		return "", err
+	}
+
+	ext, err := extensionForFormat(opts.Format)
+	if err != nil {
+		return "", &ValidationError{Message: err.Error()}
+	}
+	if err := validatePathTemplate(*opts, ext); err != nil {
+		return "", err
+	}
+	return ext, nil
 }
 
 func manifestRootForOptions(opts ExportOptions) string {

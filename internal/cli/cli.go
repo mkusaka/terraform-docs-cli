@@ -154,13 +154,18 @@ func runProviderExport(ctx context.Context, g globalFlags, args []string) (*prov
 		return nil, &provider.ValidationError{Message: err.Error()}
 	}
 
-	if strings.TrimSpace(outDir) == "" {
-		return nil, &provider.ValidationError{Message: "--out-dir is required"}
+	opts := provider.ExportOptions{
+		Namespace:    namespace,
+		Name:         name,
+		Version:      version,
+		Format:       strings.ToLower(format),
+		OutDir:       outDir,
+		Categories:   []string{categories},
+		PathTemplate: pathTemplate,
+		Clean:        clean,
 	}
-
-	outDirAbs, err := filepath.Abs(outDir)
-	if err != nil {
-		return nil, &provider.ValidationError{Message: fmt.Sprintf("invalid --out-dir: %v", err)}
+	if err := provider.PreflightExportOptions(&opts); err != nil {
+		return nil, err
 	}
 
 	cacheStore, err := cache.NewStore(g.cacheDir, g.cacheTTL, !g.noCache)
@@ -178,17 +183,6 @@ func runProviderExport(ctx context.Context, g globalFlags, args []string) (*prov
 	}, cacheStore)
 	if err != nil {
 		return nil, err
-	}
-
-	opts := provider.ExportOptions{
-		Namespace:    namespace,
-		Name:         name,
-		Version:      version,
-		Format:       strings.ToLower(format),
-		OutDir:       outDirAbs,
-		Categories:   []string{categories},
-		PathTemplate: pathTemplate,
-		Clean:        clean,
 	}
 
 	return provider.ExportDocs(ctx, client, opts)
