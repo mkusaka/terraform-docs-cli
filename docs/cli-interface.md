@@ -77,6 +77,7 @@ Flags.
 --namespace    default: hashicorp
 --service      required; slug-like search token
 --type         resources|data-sources|functions|guides|overview|actions|list-resources
+               |ephemeral-resources
 --version      semver or latest (default: latest)
 --limit        max candidates in output (default: 20)
 ```
@@ -163,7 +164,8 @@ Default output layout.
 Export side effects.
 
 - Write one file per provider doc
-- Write `_manifest.json` in docs root
+- Write namespace-scoped `_manifest.json`
+  (`{out}/terraform/{namespace}/{provider}/{version}/docs/_manifest.json`)
 - Return export summary (`written`, `manifest`) in JSON mode
 
 ## Module Commands

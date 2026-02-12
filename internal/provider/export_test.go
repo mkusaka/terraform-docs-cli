@@ -194,7 +194,7 @@ func TestExportDocs_WritesLayoutAndManifest(t *testing.T) {
 
 	guidePath := filepath.Join(outDir, "terraform", "aws", "6.31.0", "docs", "guides", "tag-policy-compliance.md")
 	resourcePath := filepath.Join(outDir, "terraform", "aws", "6.31.0", "docs", "resources", "aws_s3_bucket.md")
-	manifestPath := filepath.Join(outDir, "terraform", "aws", "6.31.0", "docs", "_manifest.json")
+	manifestPath := filepath.Join(outDir, "terraform", "hashicorp", "aws", "6.31.0", "docs", "_manifest.json")
 
 	for _, p := range []string{guidePath, resourcePath, manifestPath} {
 		if _, err := os.Stat(p); err != nil {
@@ -212,7 +212,7 @@ func TestExportDocs_WritesLayoutAndManifest(t *testing.T) {
 	if summary.Written != 2 {
 		t.Fatalf("unexpected written count: %d", summary.Written)
 	}
-	if !strings.HasSuffix(summary.Manifest, "terraform/aws/6.31.0/docs/_manifest.json") {
+	if !strings.HasSuffix(summary.Manifest, "terraform/hashicorp/aws/6.31.0/docs/_manifest.json") {
 		t.Fatalf("unexpected manifest path: %s", summary.Manifest)
 	}
 }
@@ -344,7 +344,7 @@ func TestExportDocs_PathTemplateCollisionWithManifestReturnsValidationError(t *t
 		Format:       "markdown",
 		OutDir:       outDir,
 		Categories:   []string{"guides"},
-		PathTemplate: "{out}/terraform/{provider}/{version}/docs/_manifest.json",
+		PathTemplate: "{out}/terraform/{namespace}/{provider}/{version}/docs/_manifest.json",
 	})
 	if err == nil {
 		t.Fatalf("expected path collision with manifest")
@@ -355,5 +355,72 @@ func TestExportDocs_PathTemplateCollisionWithManifestReturnsValidationError(t *t
 	}
 	if !strings.Contains(vErr.Error(), "reserved manifest path") {
 		t.Fatalf("unexpected error message: %s", vErr.Error())
+	}
+}
+
+func TestNormalizeCategories_AllIncludesEphemeralResources(t *testing.T) {
+	cats, err := normalizeCategories([]string{"all"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	found := false
+	for _, cat := range cats {
+		if cat == "ephemeral-resources" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("expected all categories to include ephemeral-resources, got: %v", cats)
+	}
+}
+
+func TestNormalizeCategories_EphemeralResourcesAllowed(t *testing.T) {
+	cats, err := normalizeCategories([]string{"ephemeral-resources"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(cats) != 1 || cats[0] != "ephemeral-resources" {
+		t.Fatalf("unexpected categories: %v", cats)
+	}
+}
+
+func TestExportDocs_CleanKeepsLegacySharedManifestWhenNamespaceDiffers(t *testing.T) {
+	outDir := t.TempDir()
+	legacyManifestPath := filepath.Join(outDir, "terraform", "aws", "6.31.0", "docs", "_manifest.json")
+	if err := os.MkdirAll(filepath.Dir(legacyManifestPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	const marker = `{"namespace":"legacy-other"}`
+	if err := os.WriteFile(legacyManifestPath, []byte(marker), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	client := &fakeAPIClient{}
+	_, err := ExportDocs(context.Background(), client, ExportOptions{
+		Namespace:    "hashicorp",
+		Name:         "aws",
+		Version:      "6.31.0",
+		Format:       "markdown",
+		OutDir:       outDir,
+		Categories:   []string{"guides"},
+		PathTemplate: "{out}/custom/{namespace}/{category}/{slug}.{ext}",
+		Clean:        true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := os.ReadFile(legacyManifestPath)
+	if err != nil {
+		t.Fatalf("expected legacy shared manifest to remain untouched: %v", err)
+	}
+	if string(b) != marker {
+		t.Fatalf("legacy shared manifest was modified unexpectedly: %s", string(b))
+	}
+
+	namespacedManifestPath := filepath.Join(outDir, "terraform", "hashicorp", "aws", "6.31.0", "docs", "_manifest.json")
+	if _, err := os.Stat(namespacedManifestPath); err != nil {
+		t.Fatalf("expected namespaced manifest to be written: %v", err)
 	}
 }

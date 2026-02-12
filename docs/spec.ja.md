@@ -99,7 +99,7 @@ terraform-docs-cli provider search \
 - `--namespace` 省略時 `hashicorp`
 - `--service` 必須
 - `--type` 必須  
-  `resources|data-sources|functions|guides|overview|actions|list-resources`
+  `resources|data-sources|ephemeral-resources|functions|guides|overview|actions|list-resources`
 - `--version` 省略時 `latest`
 - `--limit` 省略時 `20`
 
@@ -185,7 +185,7 @@ terraform-docs-cli provider export \
 - `--version` 必須（明示指定）
 - `--format` `markdown|json`（default: `markdown`）
 - `--out-dir` 必須
-- `--categories` 省略時 `all`（`resources,data-sources,functions,guides,overview,actions,list-resources`）
+- `--categories` 省略時 `all`（`resources,data-sources,ephemeral-resources,functions,guides,overview,actions,list-resources`）
 - `--path-template` 省略時デフォルトレイアウト
 - `--clean` 指定時は出力先 provider/version 配下を削除して再生成
 
@@ -197,8 +197,8 @@ terraform-docs-cli provider export \
 補足:
 
 - `{ext}` は `markdown => md`, `json => json`
-- エクスポート結果の一覧として `_manifest.json` を同階層に出力する  
-  (`{out}/terraform/{provider}/{version}/docs/_manifest.json`)
+- エクスポート結果の一覧として namespace スコープの `_manifest.json` を出力する  
+  (`{out}/terraform/{namespace}/{provider}/{version}/docs/_manifest.json`)
 
 ### 6.2 Module
 
@@ -317,7 +317,7 @@ terraform-docs-cli guide module-dev [--section all]
   "version": "6.31.0",
   "out_dir": "./dir",
   "written": 123,
-  "manifest": "dir/terraform/aws/6.31.0/docs/_manifest.json"
+  "manifest": "dir/terraform/hashicorp/aws/6.31.0/docs/_manifest.json"
 }
 ```
 

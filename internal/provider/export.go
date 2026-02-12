@@ -122,6 +122,7 @@ const reservedManifestPathOwner = "_manifest"
 var defaultCategories = []string{
 	"resources",
 	"data-sources",
+	"ephemeral-resources",
 	"functions",
 	"guides",
 	"overview",
@@ -530,7 +531,7 @@ func deriveTemplateRoot(opts ExportOptions, ext string) (string, error) {
 }
 
 func manifestRootForOptions(opts ExportOptions) string {
-	return filepath.Join(opts.OutDir, "terraform", sanitizeSegment(opts.Name), sanitizeSegment(opts.Version), "docs")
+	return filepath.Join(opts.OutDir, "terraform", sanitizeSegment(opts.Namespace), sanitizeSegment(opts.Name), sanitizeSegment(opts.Version), "docs")
 }
 
 func manifestPathForOptions(opts ExportOptions) string {

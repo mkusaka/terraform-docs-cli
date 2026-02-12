@@ -99,7 +99,7 @@ Inputs:
 - `--namespace` default `hashicorp`
 - `--service` required
 - `--type` required  
-  `resources|data-sources|functions|guides|overview|actions|list-resources`
+  `resources|data-sources|ephemeral-resources|functions|guides|overview|actions|list-resources`
 - `--version` default `latest`
 - `--limit` default `20`
 
@@ -185,7 +185,7 @@ Inputs:
 - `--version` required (explicit)
 - `--format` `markdown|json` (default: `markdown`)
 - `--out-dir` required
-- `--categories` default `all` (`resources,data-sources,functions,guides,overview,actions,list-resources`)
+- `--categories` default `all` (`resources,data-sources,ephemeral-resources,functions,guides,overview,actions,list-resources`)
 - `--path-template` optional; uses default layout if omitted
 - `--clean` removes the existing provider/version subtree before writing
 
@@ -197,8 +197,8 @@ Default persistence path:
 Notes:
 
 - `{ext}` is `md` for markdown and `json` for json format
-- Writes `_manifest.json` in the same docs directory  
-  (`{out}/terraform/{provider}/{version}/docs/_manifest.json`)
+- Writes namespace-scoped `_manifest.json` under the manifest root  
+  (`{out}/terraform/{namespace}/{provider}/{version}/docs/_manifest.json`)
 
 ### 6.2 Module
 
@@ -317,7 +317,7 @@ terraform-docs-cli guide module-dev [--section all]
   "version": "6.31.0",
   "out_dir": "./dir",
   "written": 123,
-  "manifest": "dir/terraform/aws/6.31.0/docs/_manifest.json"
+  "manifest": "dir/terraform/hashicorp/aws/6.31.0/docs/_manifest.json"
 }
 ```
 
