@@ -188,5 +188,14 @@ func (c *Client) resolve(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	// Keep a configured base path prefix (e.g. https://host/registry) for
+	// API paths that start with "/" so reverse-proxy deployments work.
+	if strings.HasPrefix(path, "/") && c.baseURL.Path != "" && c.baseURL.Path != "/" {
+		basePath := "/" + strings.Trim(strings.TrimSpace(c.baseURL.Path), "/")
+		ref.Path = basePath + "/" + strings.TrimLeft(ref.Path, "/")
+		ref.RawPath = ""
+	}
+
 	return c.baseURL.ResolveReference(ref).String(), nil
 }

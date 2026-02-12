@@ -74,3 +74,35 @@ func TestNewClient_InvalidBaseURLWithoutSchemeOrHostReturnsConfigError(t *testin
 		})
 	}
 }
+
+func TestResolve_PreservesBasePathPrefixForAbsoluteAPIPaths(t *testing.T) {
+	c, err := NewClient(Config{BaseURL: "https://example.com/registry", Timeout: 5 * time.Second}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := c.resolve("/v2/providers/hashicorp/aws?include=provider-versions")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "https://example.com/registry/v2/providers/hashicorp/aws?include=provider-versions"
+	if got != want {
+		t.Fatalf("unexpected resolved URL\nwant: %s\ngot:  %s", want, got)
+	}
+}
+
+func TestResolve_RootBasePathStillUsesRoot(t *testing.T) {
+	c, err := NewClient(Config{BaseURL: "https://registry.terraform.io", Timeout: 5 * time.Second}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := c.resolve("/v2/providers/hashicorp/aws")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "https://registry.terraform.io/v2/providers/hashicorp/aws"
+	if got != want {
+		t.Fatalf("unexpected resolved URL\nwant: %s\ngot:  %s", want, got)
+	}
+}
