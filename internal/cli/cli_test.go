@@ -2,6 +2,8 @@ package cli
 
 import (
 	"bytes"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -69,5 +71,28 @@ func TestExecute_UnsupportedRegistryURLSchemeReturnsExitCode1(t *testing.T) {
 	}, &out, &errOut)
 	if code != 1 {
 		t.Fatalf("expected exit code 1, got %d; stderr=%s", code, errOut.String())
+	}
+}
+
+func TestExecute_CacheInitFailureReturnsExitCode4(t *testing.T) {
+	cacheFile := filepath.Join(t.TempDir(), "cache-file")
+	if err := os.WriteFile(cacheFile, []byte("not-a-dir"), 0o644); err != nil {
+		t.Fatalf("failed to prepare cache file: %v", err)
+	}
+
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	code := Execute([]string{
+		"--cache-dir", cacheFile,
+		"provider", "export",
+		"--name", "aws",
+		"--version", "6.31.0",
+		"--out-dir", t.TempDir(),
+	}, &out, &errOut)
+	if code != 4 {
+		t.Fatalf("expected exit code 4, got %d; stderr=%s", code, errOut.String())
+	}
+	if !strings.Contains(errOut.String(), "failed to initialize cache") {
+		t.Fatalf("unexpected stderr: %s", errOut.String())
 	}
 }

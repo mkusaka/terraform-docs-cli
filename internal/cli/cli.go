@@ -31,6 +31,17 @@ type globalFlags struct {
 	noCache     bool
 }
 
+type CacheInitError struct {
+	Path string
+	Err  error
+}
+
+func (e *CacheInitError) Error() string {
+	return fmt.Sprintf("failed to initialize cache at %s: %v", e.Path, e.Err)
+}
+
+func (e *CacheInitError) Unwrap() error { return e.Err }
+
 func Execute(args []string, stdout io.Writer, stderr io.Writer) int {
 	g, rest, err := parseGlobalFlags(args)
 	if err != nil {
@@ -154,7 +165,7 @@ func runProviderExport(ctx context.Context, g globalFlags, args []string) (*prov
 
 	cacheStore, err := cache.NewStore(g.cacheDir, g.cacheTTL, !g.noCache)
 	if err != nil {
-		return nil, err
+		return nil, &CacheInitError{Path: g.cacheDir, Err: err}
 	}
 
 	client, err := registry.NewClient(registry.Config{
@@ -239,6 +250,11 @@ func mapErrorToExitCode(err error) int {
 	var cfgErr *registry.ConfigError
 	if errors.As(err, &cfgErr) {
 		return 1
+	}
+
+	var cacheInitErr *CacheInitError
+	if errors.As(err, &cacheInitErr) {
+		return 4
 	}
 
 	return 3
