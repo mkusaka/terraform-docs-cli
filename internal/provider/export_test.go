@@ -333,3 +333,27 @@ func TestExportDocs_PathTemplateCollisionReturnsValidationError(t *testing.T) {
 		t.Fatalf("unexpected error message: %s", vErr.Error())
 	}
 }
+
+func TestExportDocs_PathTemplateCollisionWithManifestReturnsValidationError(t *testing.T) {
+	outDir := t.TempDir()
+	client := &fakeAPIClient{}
+	_, err := ExportDocs(context.Background(), client, ExportOptions{
+		Namespace:    "hashicorp",
+		Name:         "aws",
+		Version:      "6.31.0",
+		Format:       "markdown",
+		OutDir:       outDir,
+		Categories:   []string{"guides"},
+		PathTemplate: "{out}/terraform/{provider}/{version}/docs/_manifest.json",
+	})
+	if err == nil {
+		t.Fatalf("expected path collision with manifest")
+	}
+	var vErr *ValidationError
+	if !errors.As(err, &vErr) {
+		t.Fatalf("expected validation error, got %T (%v)", err, err)
+	}
+	if !strings.Contains(vErr.Error(), "reserved manifest path") {
+		t.Fatalf("unexpected error message: %s", vErr.Error())
+	}
+}

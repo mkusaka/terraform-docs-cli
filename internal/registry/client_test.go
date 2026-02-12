@@ -1,8 +1,10 @@
 package registry
 
 import (
+	"errors"
 	"net/http"
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -41,5 +43,32 @@ func TestNewClient_UsesProxyFromEnvironment(t *testing.T) {
 	}
 	if gotProxy == nil || gotProxy.String() != proxyURL {
 		t.Fatalf("expected proxy %s, got %v", proxyURL, gotProxy)
+	}
+}
+
+func TestNewClient_InvalidBaseURLWithoutSchemeOrHostReturnsConfigError(t *testing.T) {
+	tests := []struct {
+		name    string
+		baseURL string
+	}{
+		{name: "missing scheme", baseURL: "registry.terraform.io"},
+		{name: "missing host", baseURL: "https:///v2"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := NewClient(Config{BaseURL: tt.baseURL, Timeout: 5 * time.Second}, nil)
+			if err == nil {
+				t.Fatalf("expected error for base url %q", tt.baseURL)
+			}
+
+			var cfgErr *ConfigError
+			if !errors.As(err, &cfgErr) {
+				t.Fatalf("expected ConfigError, got %T (%v)", err, err)
+			}
+			if !strings.Contains(cfgErr.Error(), "scheme and host are required") {
+				t.Fatalf("unexpected error message: %s", cfgErr.Error())
+			}
+		})
 	}
 }

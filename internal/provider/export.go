@@ -117,6 +117,8 @@ type plannedFile struct {
 	item    manifestItem
 }
 
+const reservedManifestPathOwner = "_manifest"
+
 var defaultCategories = []string{
 	"resources",
 	"data-sources",
@@ -145,6 +147,7 @@ func ExportDocs(ctx context.Context, client APIClient, opts ExportOptions) (*Exp
 	seen := make(map[string]struct{})
 	planned := make([]plannedFile, 0)
 	pathOwners := make(map[string]string)
+	pathOwners[manifestPathForOptions(opts)] = reservedManifestPathOwner
 
 	for _, category := range opts.Categories {
 		for page := 1; ; page++ {
@@ -194,6 +197,9 @@ func ExportDocs(ctx context.Context, client APIClient, opts ExportOptions) (*Exp
 					return nil, &ValidationError{Message: err.Error()}
 				}
 				if existing, exists := pathOwners[filePath]; exists {
+					if existing == reservedManifestPathOwner {
+						return nil, &ValidationError{Message: fmt.Sprintf("path collision detected in --path-template: %s conflicts with reserved manifest path", filePath)}
+					}
 					return nil, &ValidationError{Message: fmt.Sprintf("path collision detected in --path-template: %s (doc_id=%s conflicts with doc_id=%s)", filePath, existing, detail.Data.ID)}
 				}
 				pathOwners[filePath] = detail.Data.ID
@@ -428,7 +434,8 @@ func renderContent(format string, detail providerDocDetailResponse, raw []byte) 
 }
 
 func writeManifest(opts ExportOptions, docs []manifestItem) (string, error) {
-	docsRoot := manifestRootForOptions(opts)
+	manifestPath := manifestPathForOptions(opts)
+	docsRoot := filepath.Dir(manifestPath)
 	if err := os.MkdirAll(docsRoot, 0o755); err != nil {
 		return "", &WriteError{Path: docsRoot, Err: err}
 	}
@@ -448,7 +455,6 @@ func writeManifest(opts ExportOptions, docs []manifestItem) (string, error) {
 		return "", &WriteError{Path: filepath.Join(docsRoot, "_manifest.json"), Err: err}
 	}
 
-	manifestPath := filepath.Join(docsRoot, "_manifest.json")
 	if err := os.WriteFile(manifestPath, append(b, '\n'), 0o644); err != nil {
 		return "", &WriteError{Path: manifestPath, Err: err}
 	}
@@ -525,4 +531,8 @@ func deriveTemplateRoot(opts ExportOptions, ext string) (string, error) {
 
 func manifestRootForOptions(opts ExportOptions) string {
 	return filepath.Join(opts.OutDir, "terraform", sanitizeSegment(opts.Name), sanitizeSegment(opts.Version), "docs")
+}
+
+func manifestPathForOptions(opts ExportOptions) string {
+	return filepath.Join(manifestRootForOptions(opts), "_manifest.json")
 }

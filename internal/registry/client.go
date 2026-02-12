@@ -57,6 +57,9 @@ func NewClient(cfg Config, cacheStore *cache.Store) (*Client, error) {
 	if err != nil {
 		return nil, &ConfigError{Message: fmt.Sprintf("invalid base url: %v", err)}
 	}
+	if strings.TrimSpace(base.Scheme) == "" || strings.TrimSpace(base.Host) == "" {
+		return nil, &ConfigError{Message: fmt.Sprintf("invalid base url: scheme and host are required (%s)", cfg.BaseURL)}
+	}
 
 	transport, ok := http.DefaultTransport.(*http.Transport)
 	if !ok {
