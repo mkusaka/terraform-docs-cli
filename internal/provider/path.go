@@ -59,6 +59,9 @@ func ensureNoSymlinkTraversal(baseAbs, targetAbs string) error {
 	if !isPathWithinDir(baseAbs, targetAbs) {
 		return fmt.Errorf("target is outside base dir: %s", targetAbs)
 	}
+	if err := rejectSymlinkInAncestors(baseAbs); err != nil {
+		return err
+	}
 
 	rel, err := filepath.Rel(baseAbs, targetAbs)
 	if err != nil {
@@ -66,9 +69,6 @@ func ensureNoSymlinkTraversal(baseAbs, targetAbs string) error {
 	}
 
 	current := baseAbs
-	if err := rejectSymlinkIfExists(current); err != nil {
-		return err
-	}
 	if rel == "." {
 		return nil
 	}
@@ -79,6 +79,31 @@ func ensureNoSymlinkTraversal(baseAbs, targetAbs string) error {
 		}
 		current = filepath.Join(current, segment)
 		if err := rejectSymlinkIfExists(current); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func rejectSymlinkInAncestors(path string) error {
+	p := filepath.Clean(path)
+	prefixes := make([]string, 0, 8)
+	for {
+		prefixes = append(prefixes, p)
+		parent := filepath.Dir(p)
+		if parent == p {
+			break
+		}
+		p = parent
+	}
+	for i := len(prefixes) - 1; i >= 0; i-- {
+		depthFromRoot := len(prefixes) - 1 - i
+		// Skip root and the first directory under root. On Unix-like systems
+		// this avoids rejecting compatibility symlinks such as /var -> /private/var.
+		if depthFromRoot <= 1 {
+			continue
+		}
+		if err := rejectSymlinkIfExists(prefixes[i]); err != nil {
 			return err
 		}
 	}

@@ -97,3 +97,33 @@ func TestBuildOutputPath_RejectsUnresolvedPlaceholderWithHyphen(t *testing.T) {
 		t.Fatalf("unexpected placeholder in error: %v", err)
 	}
 }
+
+func TestBuildOutputPath_RejectsOutDirAncestorSymlink(t *testing.T) {
+	rootDir := t.TempDir()
+	externalDir := t.TempDir()
+
+	symlinkParent := filepath.Join(rootDir, "link")
+	if err := os.Symlink(externalDir, symlinkParent); err != nil {
+		t.Skipf("symlink is not supported on this platform: %v", err)
+	}
+
+	outDir := filepath.Join(symlinkParent, "out")
+	tpl := "{out}/terraform/{namespace}/{provider}/{version}/docs/{category}/{slug}.{ext}"
+	vars := map[string]string{
+		"out":       outDir,
+		"namespace": "hashicorp",
+		"provider":  "aws",
+		"version":   "6.31.0",
+		"category":  "guides",
+		"slug":      "tag-policy-compliance",
+		"ext":       "md",
+	}
+
+	_, err := BuildOutputPath(tpl, vars, outDir)
+	if err == nil {
+		t.Fatalf("expected symlink traversal error for out-dir ancestor")
+	}
+	if !strings.Contains(err.Error(), "crosses symlink") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
