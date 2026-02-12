@@ -144,6 +144,9 @@ func ExportDocs(ctx context.Context, client APIClient, opts ExportOptions) (*Exp
 	if err != nil {
 		return nil, &ValidationError{Message: err.Error()}
 	}
+	if err := validatePathTemplate(opts, ext); err != nil {
+		return nil, err
+	}
 
 	seen := make(map[string]struct{})
 	planned := make([]plannedFile, 0)
@@ -537,6 +540,23 @@ func deriveTemplateRoot(opts ExportOptions, ext string) (string, error) {
 		return "", &ValidationError{Message: "derived clean root is outside --out-dir"}
 	}
 	return rootAbs, nil
+}
+
+func validatePathTemplate(opts ExportOptions, ext string) error {
+	vars := map[string]string{
+		"out":       opts.OutDir,
+		"namespace": sanitizeSegment(opts.Namespace),
+		"provider":  sanitizeSegment(opts.Name),
+		"version":   sanitizeSegment(opts.Version),
+		"category":  "validation",
+		"slug":      "validation",
+		"doc_id":    "validation",
+		"ext":       ext,
+	}
+	if _, err := BuildOutputPath(opts.PathTemplate, vars, opts.OutDir); err != nil {
+		return &ValidationError{Message: err.Error()}
+	}
+	return nil
 }
 
 func manifestRootForOptions(opts ExportOptions) string {

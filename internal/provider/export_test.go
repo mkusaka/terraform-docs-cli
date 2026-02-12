@@ -401,6 +401,59 @@ func TestExportDocs_PathTemplateCollisionWithManifestReturnsValidationError(t *t
 	}
 }
 
+func TestExportDocs_InvalidPathTemplateFailsWhenNoDocsFound(t *testing.T) {
+	outDir := t.TempDir()
+	client := &fakeAPIClient{}
+	_, err := ExportDocs(context.Background(), client, ExportOptions{
+		Namespace:    "hashicorp",
+		Name:         "aws",
+		Version:      "6.31.0",
+		Format:       "markdown",
+		OutDir:       outDir,
+		Categories:   []string{"functions"},
+		PathTemplate: "{out}/custom/{unknown}/{slug}.{ext}",
+	})
+	if err == nil {
+		t.Fatalf("expected validation error for unresolved placeholder")
+	}
+	var vErr *ValidationError
+	if !errors.As(err, &vErr) {
+		t.Fatalf("expected validation error, got %T (%v)", err, err)
+	}
+	if !strings.Contains(vErr.Error(), "unresolved placeholder") {
+		t.Fatalf("unexpected error message: %s", vErr.Error())
+	}
+
+	manifestPath := filepath.Join(outDir, "terraform", "hashicorp", "aws", "6.31.0", "docs", "_manifest.json")
+	if _, statErr := os.Stat(manifestPath); !os.IsNotExist(statErr) {
+		t.Fatalf("manifest must not be written on invalid template: %v", statErr)
+	}
+}
+
+func TestExportDocs_PathTemplateOutsideOutDirFailsWhenNoDocsFound(t *testing.T) {
+	outDir := t.TempDir()
+	client := &fakeAPIClient{}
+	_, err := ExportDocs(context.Background(), client, ExportOptions{
+		Namespace:    "hashicorp",
+		Name:         "aws",
+		Version:      "6.31.0",
+		Format:       "markdown",
+		OutDir:       outDir,
+		Categories:   []string{"functions"},
+		PathTemplate: "{out}/../outside/{slug}.{ext}",
+	})
+	if err == nil {
+		t.Fatalf("expected validation error for template outside out-dir")
+	}
+	var vErr *ValidationError
+	if !errors.As(err, &vErr) {
+		t.Fatalf("expected validation error, got %T (%v)", err, err)
+	}
+	if !strings.Contains(vErr.Error(), "outside --out-dir") {
+		t.Fatalf("unexpected error message: %s", vErr.Error())
+	}
+}
+
 func TestNormalizeCategories_AllIncludesEphemeralResources(t *testing.T) {
 	cats, err := normalizeCategories([]string{"all"})
 	if err != nil {
