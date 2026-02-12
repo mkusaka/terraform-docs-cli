@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-const DefaultPathTemplate = "{out}/terraform/{provider}/{version}/docs/{category}/{slug}.{ext}"
+const DefaultPathTemplate = "{out}/terraform/{namespace}/{provider}/{version}/docs/{category}/{slug}.{ext}"
 
 var (
 	reInvalidSegment = regexp.MustCompile(`[^a-zA-Z0-9._-]+`)

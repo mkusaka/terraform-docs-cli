@@ -38,4 +38,4 @@ go run ./cmd/terraform-docs-cli \
 
 Generated output example:
 
-`dir/terraform/aws/6.31.0/docs/guides/tag-policy-compliance.md`
+`dir/terraform/hashicorp/aws/6.31.0/docs/guides/tag-policy-compliance.md`

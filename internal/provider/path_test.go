@@ -7,14 +7,15 @@ import (
 
 func TestBuildOutputPath_DefaultTemplate(t *testing.T) {
 	outDir := t.TempDir()
-	tpl := "{out}/terraform/{provider}/{version}/docs/{category}/{slug}.{ext}"
+	tpl := "{out}/terraform/{namespace}/{provider}/{version}/docs/{category}/{slug}.{ext}"
 	vars := map[string]string{
-		"out":      outDir,
-		"provider": "aws",
-		"version":  "6.31.0",
-		"category": "guides",
-		"slug":     "tag-policy-compliance",
-		"ext":      "md",
+		"out":       outDir,
+		"namespace": "hashicorp",
+		"provider":  "aws",
+		"version":   "6.31.0",
+		"category":  "guides",
+		"slug":      "tag-policy-compliance",
+		"ext":       "md",
 	}
 
 	got, err := BuildOutputPath(tpl, vars, outDir)
@@ -22,7 +23,7 @@ func TestBuildOutputPath_DefaultTemplate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := filepath.Join(outDir, "terraform", "aws", "6.31.0", "docs", "guides", "tag-policy-compliance.md")
+	want := filepath.Join(outDir, "terraform", "hashicorp", "aws", "6.31.0", "docs", "guides", "tag-policy-compliance.md")
 	if got != want {
 		t.Fatalf("unexpected path\nwant: %s\ngot:  %s", want, got)
 	}

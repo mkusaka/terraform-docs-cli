@@ -174,7 +174,7 @@ terraform-docs-cli provider export \
   --format markdown \
   --out-dir ./dir \
   [--categories all] \
-  [--path-template "{out}/terraform/{provider}/{version}/docs/{category}/{slug}.{ext}"] \
+  [--path-template "{out}/terraform/{namespace}/{provider}/{version}/docs/{category}/{slug}.{ext}"] \
   [--clean]
 ```
 
@@ -191,8 +191,8 @@ Inputs:
 
 Default persistence path:
 
-- `{out}/terraform/{provider}/{version}/docs/{category}/{slug}.{ext}`
-- Example: `dir/terraform/aws/6.31.0/docs/guides/tag-policy-compliance.md`
+- `{out}/terraform/{namespace}/{provider}/{version}/docs/{category}/{slug}.{ext}`
+- Example: `dir/terraform/hashicorp/aws/6.31.0/docs/guides/tag-policy-compliance.md`
 
 Notes:
 

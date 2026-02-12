@@ -50,9 +50,11 @@ func TestNewClient_InvalidBaseURLWithoutSchemeOrHostReturnsConfigError(t *testin
 	tests := []struct {
 		name    string
 		baseURL string
+		wantMsg string
 	}{
-		{name: "missing scheme", baseURL: "registry.terraform.io"},
-		{name: "missing host", baseURL: "https:///v2"},
+		{name: "missing scheme", baseURL: "registry.terraform.io", wantMsg: "scheme and host are required"},
+		{name: "missing host", baseURL: "https:///v2", wantMsg: "scheme and host are required"},
+		{name: "unsupported scheme", baseURL: "ftp://registry.terraform.io", wantMsg: "scheme must be http or https"},
 	}
 
 	for _, tt := range tests {
@@ -66,7 +68,7 @@ func TestNewClient_InvalidBaseURLWithoutSchemeOrHostReturnsConfigError(t *testin
 			if !errors.As(err, &cfgErr) {
 				t.Fatalf("expected ConfigError, got %T (%v)", err, err)
 			}
-			if !strings.Contains(cfgErr.Error(), "scheme and host are required") {
+			if !strings.Contains(cfgErr.Error(), tt.wantMsg) {
 				t.Fatalf("unexpected error message: %s", cfgErr.Error())
 			}
 		})

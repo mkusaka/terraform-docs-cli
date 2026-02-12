@@ -56,3 +56,18 @@ func TestExecute_InvalidRegistryURLReturnsExitCode1(t *testing.T) {
 		t.Fatalf("expected exit code 1, got %d; stderr=%s", code, errOut.String())
 	}
 }
+
+func TestExecute_UnsupportedRegistryURLSchemeReturnsExitCode1(t *testing.T) {
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	code := Execute([]string{
+		"--registry-url", "ftp://registry.terraform.io",
+		"provider", "export",
+		"--name", "aws",
+		"--version", "6.31.0",
+		"--out-dir", t.TempDir(),
+	}, &out, &errOut)
+	if code != 1 {
+		t.Fatalf("expected exit code 1, got %d; stderr=%s", code, errOut.String())
+	}
+}

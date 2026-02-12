@@ -60,6 +60,10 @@ func NewClient(cfg Config, cacheStore *cache.Store) (*Client, error) {
 	if strings.TrimSpace(base.Scheme) == "" || strings.TrimSpace(base.Host) == "" {
 		return nil, &ConfigError{Message: fmt.Sprintf("invalid base url: scheme and host are required (%s)", cfg.BaseURL)}
 	}
+	scheme := strings.ToLower(strings.TrimSpace(base.Scheme))
+	if scheme != "http" && scheme != "https" {
+		return nil, &ConfigError{Message: fmt.Sprintf("invalid base url: scheme must be http or https (%s)", cfg.BaseURL)}
+	}
 
 	transport, ok := http.DefaultTransport.(*http.Transport)
 	if !ok {

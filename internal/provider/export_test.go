@@ -192,8 +192,8 @@ func TestExportDocs_WritesLayoutAndManifest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	guidePath := filepath.Join(outDir, "terraform", "aws", "6.31.0", "docs", "guides", "tag-policy-compliance.md")
-	resourcePath := filepath.Join(outDir, "terraform", "aws", "6.31.0", "docs", "resources", "aws_s3_bucket.md")
+	guidePath := filepath.Join(outDir, "terraform", "hashicorp", "aws", "6.31.0", "docs", "guides", "tag-policy-compliance.md")
+	resourcePath := filepath.Join(outDir, "terraform", "hashicorp", "aws", "6.31.0", "docs", "resources", "aws_s3_bucket.md")
 	manifestPath := filepath.Join(outDir, "terraform", "hashicorp", "aws", "6.31.0", "docs", "_manifest.json")
 
 	for _, p := range []string{guidePath, resourcePath, manifestPath} {
@@ -219,7 +219,7 @@ func TestExportDocs_WritesLayoutAndManifest(t *testing.T) {
 
 func TestExportDocs_CleanRemovesExistingSubtree(t *testing.T) {
 	outDir := t.TempDir()
-	stalePath := filepath.Join(outDir, "terraform", "aws", "6.31.0", "docs", "old", "stale.md")
+	stalePath := filepath.Join(outDir, "terraform", "hashicorp", "aws", "6.31.0", "docs", "old", "stale.md")
 	if err := os.MkdirAll(filepath.Dir(stalePath), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -248,7 +248,7 @@ func TestExportDocs_CleanRemovesExistingSubtree(t *testing.T) {
 
 func TestExportDocs_CleanDoesNotDeleteWhenVersionResolutionFails(t *testing.T) {
 	outDir := t.TempDir()
-	stalePath := filepath.Join(outDir, "terraform", "aws", "6.31.0", "docs", "guides", "stale.md")
+	stalePath := filepath.Join(outDir, "terraform", "hashicorp", "aws", "6.31.0", "docs", "guides", "stale.md")
 	if err := os.MkdirAll(filepath.Dir(stalePath), 0o755); err != nil {
 		t.Fatal(err)
 	}
