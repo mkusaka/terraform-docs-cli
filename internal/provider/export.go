@@ -414,7 +414,16 @@ func getProviderDocDetail(ctx context.Context, client APIClient, docID string) (
 		return detail, nil, err
 	}
 	if err := json.Unmarshal(raw, &detail); err != nil {
-		return detail, nil, err
+		// Recover from cached corrupt JSON by using GetJSON, which can bypass cache
+		// and refetch when cached payload is undecodable.
+		if jsonErr := client.GetJSON(ctx, path, &detail); jsonErr != nil {
+			return detail, nil, err
+		}
+		recovered, marshalErr := json.Marshal(detail)
+		if marshalErr != nil {
+			return detail, nil, marshalErr
+		}
+		return detail, recovered, nil
 	}
 	return detail, raw, nil
 }
