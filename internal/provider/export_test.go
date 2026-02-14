@@ -395,6 +395,36 @@ func TestExportDocs_RecoversFromInvalidDetailJSONViaGetJSON(t *testing.T) {
 	}
 }
 
+func TestExportDocs_JSONFailsWhenRecoveredRawIsInvalid(t *testing.T) {
+	outDir := t.TempDir()
+	client := &fakeDetailRecoverClient{}
+
+	_, err := ExportDocs(context.Background(), client, ExportOptions{
+		Namespace:  "hashicorp",
+		Name:       "aws",
+		Version:    "6.31.0",
+		Format:     "json",
+		OutDir:     outDir,
+		Categories: []string{"guides"},
+	})
+	if err == nil {
+		t.Fatalf("expected json decode error")
+	}
+
+	var wErr *WriteError
+	if !errors.As(err, &wErr) {
+		t.Fatalf("expected write error, got %T (%v)", err, err)
+	}
+	if !strings.Contains(err.Error(), "failed to decode provider doc response as json") {
+		t.Fatalf("unexpected error message: %v", err)
+	}
+
+	guidePath := filepath.Join(outDir, "terraform", "hashicorp", "aws", "6.31.0", "docs", "guides", "tag-policy-compliance.json")
+	if _, statErr := os.Stat(guidePath); !os.IsNotExist(statErr) {
+		t.Fatalf("json file must not be written when raw json is invalid: %v", statErr)
+	}
+}
+
 func TestGetProviderDocDetail_PropagatesRefetchError(t *testing.T) {
 	wantErr := &NotFoundError{Message: "provider doc not found"}
 	client := &fakeDetailRecoverRefetchErrorClient{refetchErr: wantErr}

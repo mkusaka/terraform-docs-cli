@@ -440,7 +440,7 @@ func renderContent(format string, detail providerDocDetailResponse, raw []byte) 
 			if len(raw) == 0 {
 				return nil, &WriteError{Path: "", Err: errors.New("empty provider doc response")}
 			}
-			return raw, nil
+			return nil, &WriteError{Path: "", Err: fmt.Errorf("failed to decode provider doc response as json: %w", err)}
 		}
 		formatted, err := json.MarshalIndent(anyDoc, "", "  ")
 		if err != nil {
