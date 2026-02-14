@@ -47,7 +47,7 @@ func (s *Spinner) Start(msg string) {
 	if s.isTTY {
 		go s.run()
 	} else {
-		fmt.Fprintf(s.w, "%s\n", msg)
+		_, _ = fmt.Fprintf(s.w, "%s\n", msg)
 		close(s.exited)
 	}
 }
@@ -65,7 +65,7 @@ func (s *Spinner) run() {
 			s.mu.Lock()
 			msg := s.message
 			s.mu.Unlock()
-			fmt.Fprintf(s.w, "\r\033[K%s %s", frames[i%len(frames)], msg)
+			_, _ = fmt.Fprintf(s.w, "\r\033[K%s %s", frames[i%len(frames)], msg)
 			i++
 		}
 	}
@@ -80,7 +80,7 @@ func (s *Spinner) Update(msg string) {
 	s.mu.Unlock()
 
 	if !s.isTTY && started && msg != prev {
-		fmt.Fprintf(s.w, "%s\n", msg)
+		_, _ = fmt.Fprintf(s.w, "%s\n", msg)
 	}
 }
 
@@ -94,7 +94,7 @@ func (s *Spinner) Stop() {
 		close(s.done)
 		<-s.exited
 		if s.isTTY {
-			fmt.Fprintf(s.w, "\r\033[K")
+			_, _ = fmt.Fprintf(s.w, "\r\033[K")
 		}
 	})
 }
