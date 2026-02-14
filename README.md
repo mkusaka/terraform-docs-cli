@@ -23,6 +23,24 @@ Current command tree:
 terraform-docs-cli [global flags] provider export [flags]
 ```
 
+## Install
+
+Install with Go:
+
+```bash
+go install github.com/mkusaka/terraform-docs-cli/cmd/terraform-docs-cli@latest
+terraform-docs-cli --help
+```
+
+Build from source (for branch-specific changes):
+
+```bash
+git clone https://github.com/mkusaka/terraform-docs-cli.git
+cd terraform-docs-cli
+go build -o bin/terraform-docs-cli ./cmd/terraform-docs-cli
+./bin/terraform-docs-cli --help
+```
+
 ## Quick Start
 
 Run without installation:
