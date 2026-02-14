@@ -156,12 +156,14 @@ func ExportDocs(ctx context.Context, client APIClient, opts ExportOptions) (*Exp
 			if len(docs) == 0 {
 				break
 			}
+			newDocsOnPage := 0
 
 			for _, doc := range docs {
 				if _, exists := seen[doc.ID]; exists {
 					continue
 				}
 				seen[doc.ID] = struct{}{}
+				newDocsOnPage++
 
 				detail, raw, err := getProviderDocDetail(ctx, client, doc.ID)
 				if err != nil {
@@ -223,6 +225,12 @@ func ExportDocs(ctx context.Context, client APIClient, opts ExportOptions) (*Exp
 						Path:     filepath.ToSlash(relPath),
 					},
 				})
+			}
+
+			// Stop paging when the endpoint keeps returning already-seen docs.
+			// This avoids infinite loops against non-compliant pagers/proxies.
+			if newDocsOnPage == 0 && page > 1 {
+				break
 			}
 		}
 	}
@@ -495,11 +503,11 @@ func deriveCleanTargets(opts ExportOptions, ext string) ([]string, error) {
 		targetSet[target] = struct{}{}
 	}
 
-	if isCleanTemplateScoped(opts.PathTemplate) {
-		templateRoot, err := deriveTemplateRoot(opts, ext)
-		if err != nil {
-			return nil, err
-		}
+	templateRoot, err := deriveTemplateRoot(opts, ext)
+	if err != nil {
+		return nil, err
+	}
+	if isCleanRootScopedToProviderVersion(templateRoot, opts) {
 		targetSet[templateRoot] = struct{}{}
 	}
 
@@ -557,10 +565,30 @@ func deriveManagedTargetsFromManifest(opts ExportOptions) ([]string, error) {
 	return targets, nil
 }
 
-func isCleanTemplateScoped(template string) bool {
-	return strings.Contains(template, "{namespace}") &&
-		strings.Contains(template, "{provider}") &&
-		strings.Contains(template, "{version}")
+func isCleanRootScopedToProviderVersion(rootAbs string, opts ExportOptions) bool {
+	rel, err := filepath.Rel(opts.OutDir, rootAbs)
+	if err != nil {
+		return false
+	}
+	if rel == "." {
+		return false
+	}
+	if rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
+		return false
+	}
+
+	required := map[string]struct{}{
+		sanitizeSegment(opts.Namespace): {},
+		sanitizeSegment(opts.Name):      {},
+		sanitizeSegment(opts.Version):   {},
+	}
+	for _, segment := range strings.Split(filepath.Clean(rel), string(os.PathSeparator)) {
+		if segment == "" || segment == "." {
+			continue
+		}
+		delete(required, segment)
+	}
+	return len(required) == 0
 }
 
 func deriveTemplateRoot(opts ExportOptions, ext string) (string, error) {

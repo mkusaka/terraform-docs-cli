@@ -175,6 +175,68 @@ func (f *fakeCollisionClient) Get(_ context.Context, path string) ([]byte, error
 	}
 }
 
+type fakePagingIgnoresPageClient struct {
+	listCalls int
+}
+
+func (f *fakePagingIgnoresPageClient) GetJSON(_ context.Context, path string, dst any) error {
+	if strings.HasPrefix(path, "/v2/providers/hashicorp/aws") {
+		data := map[string]any{
+			"included": []any{
+				map[string]any{
+					"type": "provider-versions",
+					"id":   "70800",
+					"attributes": map[string]any{
+						"version": "6.31.0",
+					},
+				},
+			},
+		}
+		b, _ := json.Marshal(data)
+		return json.Unmarshal(b, dst)
+	}
+
+	if strings.HasPrefix(path, "/v2/provider-docs?") {
+		u, err := url.Parse(path)
+		if err != nil {
+			return err
+		}
+		q := u.Query()
+		cat := q.Get("filter[category]")
+		if cat != "guides" {
+			b, _ := json.Marshal(map[string]any{"data": []any{}})
+			return json.Unmarshal(b, dst)
+		}
+		f.listCalls++
+		if f.listCalls > 5 {
+			return fmt.Errorf("too many list calls: %d", f.listCalls)
+		}
+
+		b, _ := json.Marshal(map[string]any{
+			"data": []map[string]any{{
+				"id": "1",
+				"attributes": map[string]any{
+					"category": "guides",
+					"slug":     "tag-policy-compliance",
+					"title":    "Tag Policy Compliance",
+				},
+			}},
+		})
+		return json.Unmarshal(b, dst)
+	}
+
+	return fmt.Errorf("unexpected GetJSON path: %s", path)
+}
+
+func (f *fakePagingIgnoresPageClient) Get(_ context.Context, path string) ([]byte, error) {
+	switch path {
+	case "/v2/provider-docs/1":
+		return []byte(`{"data":{"id":"1","attributes":{"category":"guides","slug":"tag-policy-compliance","title":"Tag Policy Compliance","content":"# guide content"}}}`), nil
+	default:
+		return nil, fmt.Errorf("unexpected Get path: %s", path)
+	}
+}
+
 type fakeDetailRecoverClient struct{}
 
 func (f *fakeDetailRecoverClient) GetJSON(_ context.Context, path string, dst any) error {
@@ -474,6 +536,25 @@ func TestExportDocs_JSONRecoveryPreservesRawFields(t *testing.T) {
 	}
 }
 
+func TestExportDocs_PagingStopsWhenOnlySeenDocsRemain(t *testing.T) {
+	outDir := t.TempDir()
+	client := &fakePagingIgnoresPageClient{}
+	_, err := ExportDocs(context.Background(), client, ExportOptions{
+		Namespace:  "hashicorp",
+		Name:       "aws",
+		Version:    "6.31.0",
+		Format:     "markdown",
+		OutDir:     outDir,
+		Categories: []string{"guides"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if client.listCalls != 2 {
+		t.Fatalf("expected pager to stop after 2 calls (new + duplicate), got %d", client.listCalls)
+	}
+}
+
 func TestExportDocs_CleanRemovesExistingSubtree(t *testing.T) {
 	outDir := t.TempDir()
 	stalePath := filepath.Join(outDir, "terraform", "hashicorp", "aws", "6.31.0", "docs", "old", "stale.md")
@@ -693,6 +774,40 @@ func TestExportDocs_CleanWithUnscopedTemplateRemovesManagedFilesOnly(t *testing.
 	}
 	if _, err := os.Stat(unrelatedPath); err != nil {
 		t.Fatalf("expected unrelated file to remain: %v", err)
+	}
+}
+
+func TestExportDocs_CleanKeepsOtherVersionsWhenVersionIsFileName(t *testing.T) {
+	outDir := t.TempDir()
+	otherVersionPath := filepath.Join(outDir, "custom", "hashicorp", "aws", "6.32.0.md")
+	if err := os.MkdirAll(filepath.Dir(otherVersionPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(otherVersionPath, []byte("keep"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	client := &fakeAPIClient{}
+	_, err := ExportDocs(context.Background(), client, ExportOptions{
+		Namespace:    "hashicorp",
+		Name:         "aws",
+		Version:      "6.31.0",
+		Format:       "markdown",
+		OutDir:       outDir,
+		Categories:   []string{"guides"},
+		PathTemplate: "{out}/custom/{namespace}/{provider}/{version}.{ext}",
+		Clean:        true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := os.Stat(otherVersionPath); err != nil {
+		t.Fatalf("expected other version file to remain, got: %v", err)
+	}
+	currentVersionPath := filepath.Join(outDir, "custom", "hashicorp", "aws", "6.31.0.md")
+	if _, err := os.Stat(currentVersionPath); err != nil {
+		t.Fatalf("expected current version file to be written, got: %v", err)
 	}
 }
 
