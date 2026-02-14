@@ -286,7 +286,7 @@ func buildRegistryClient(g globalFlags) (*registry.Client, error) {
 
 func printSummaries(summaries []provider.ExportSummary, w io.Writer) {
 	for _, s := range summaries {
-		fmt.Fprintf(w, "exported %d docs for %s@%s\nmanifest: %s\n", s.Written, s.Provider, s.Version, s.Manifest)
+		_, _ = fmt.Fprintf(w, "exported %d docs for %s@%s\nmanifest: %s\n", s.Written, s.Provider, s.Version, s.Manifest)
 	}
 }
 
