@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
 )
 
@@ -133,9 +134,17 @@ func GetPolicy(ctx context.Context, client APIClient, id string) (*GetResult, er
 }
 
 // extractPolicyID extracts the terraform_policy_id from a related link.
-// e.g. "/v2/policies/hashicorp/CIS/1.0.1" → "policies/hashicorp/CIS/1.0.1"
+// Handles both relative paths ("/v2/policies/...") and full URLs
+// ("https://registry.terraform.io/v2/policies/...").
 func extractPolicyID(link string) string {
 	link = strings.TrimSpace(link)
+	if strings.HasPrefix(link, "http://") || strings.HasPrefix(link, "https://") {
+		u, err := url.Parse(link)
+		if err != nil {
+			return link
+		}
+		link = u.Path
+	}
 	if strings.HasPrefix(link, "/v2/") {
 		return strings.TrimPrefix(link, "/v2/")
 	}

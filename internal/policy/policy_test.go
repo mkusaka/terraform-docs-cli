@@ -142,6 +142,8 @@ func TestExtractPolicyID(t *testing.T) {
 		want  string
 	}{
 		{"/v2/policies/hashicorp/CIS/1.0.1", "policies/hashicorp/CIS/1.0.1"},
+		{"https://registry.terraform.io/v2/policies/hashicorp/CIS/1.0.1", "policies/hashicorp/CIS/1.0.1"},
+		{"http://registry.terraform.io/v2/policies/hashicorp/CIS/1.0.1", "policies/hashicorp/CIS/1.0.1"},
 		{"policies/hashicorp/CIS/1.0.1", "policies/hashicorp/CIS/1.0.1"},
 		{"", ""},
 	}

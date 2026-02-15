@@ -311,3 +311,86 @@ func TestExecute_LegacyModeStillRequiresName(t *testing.T) {
 		t.Fatalf("expected -name required error, got: %s", errOut.String())
 	}
 }
+
+// --- new subcommand tests ---
+
+func TestExecute_ProviderSearchExtraArgsReturnsExitCode1(t *testing.T) {
+	var errOut bytes.Buffer
+	code := Execute([]string{
+		"provider", "search",
+		"-name", "aws",
+		"extra",
+	}, io.Discard, &errOut)
+	if code != 1 {
+		t.Fatalf("expected exit code 1, got %d; stderr=%s", code, errOut.String())
+	}
+	if !strings.Contains(errOut.String(), "unexpected positional arguments") {
+		t.Fatalf("unexpected stderr: %s", errOut.String())
+	}
+}
+
+func TestExecute_ModuleSearchExtraArgsReturnsExitCode1(t *testing.T) {
+	var errOut bytes.Buffer
+	code := Execute([]string{
+		"module", "search",
+		"-query", "vpc",
+		"extra",
+	}, io.Discard, &errOut)
+	if code != 1 {
+		t.Fatalf("expected exit code 1, got %d; stderr=%s", code, errOut.String())
+	}
+	if !strings.Contains(errOut.String(), "unexpected positional arguments") {
+		t.Fatalf("unexpected stderr: %s", errOut.String())
+	}
+}
+
+func TestExecute_PolicySearchExtraArgsReturnsExitCode1(t *testing.T) {
+	var errOut bytes.Buffer
+	code := Execute([]string{
+		"policy", "search",
+		"-query", "cis",
+		"extra",
+	}, io.Discard, &errOut)
+	if code != 1 {
+		t.Fatalf("expected exit code 1, got %d; stderr=%s", code, errOut.String())
+	}
+	if !strings.Contains(errOut.String(), "unexpected positional arguments") {
+		t.Fatalf("unexpected stderr: %s", errOut.String())
+	}
+}
+
+func TestExecute_GuideStyleExtraArgsReturnsExitCode1(t *testing.T) {
+	var errOut bytes.Buffer
+	code := Execute([]string{
+		"guide", "style",
+		"extra",
+	}, io.Discard, &errOut)
+	if code != 1 {
+		t.Fatalf("expected exit code 1, got %d; stderr=%s", code, errOut.String())
+	}
+	if !strings.Contains(errOut.String(), "unexpected positional arguments") {
+		t.Fatalf("unexpected stderr: %s", errOut.String())
+	}
+}
+
+func TestExecute_UnsupportedSubcommandReturnsExitCode1(t *testing.T) {
+	tests := []struct {
+		name string
+		args []string
+	}{
+		{"provider unknown", []string{"provider", "unknown"}},
+		{"module unknown", []string{"module", "unknown"}},
+		{"policy unknown", []string{"policy", "unknown"}},
+		{"guide unknown", []string{"guide", "unknown"}},
+		{"unknown group", []string{"unknown", "cmd"}},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			var errOut bytes.Buffer
+			code := Execute(tc.args, io.Discard, &errOut)
+			if code != 1 {
+				t.Fatalf("expected exit code 1, got %d; stderr=%s", code, errOut.String())
+			}
+		})
+	}
+}
