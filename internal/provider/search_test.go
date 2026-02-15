@@ -23,10 +23,10 @@ func (f *fakeSearchClient) GetJSON(_ context.Context, path string, dst any) erro
 	if path == "/v1/providers/hashicorp/aws/6.31.0" {
 		b, _ := json.Marshal(map[string]any{
 			"docs": []map[string]any{
-				{"id": 100, "title": "aws_ec2_instance", "category": "resources", "slug": "aws_ec2_instance", "language": "hcl"},
-				{"id": 101, "title": "aws_s3_bucket", "category": "resources", "slug": "aws_s3_bucket", "language": "hcl"},
-				{"id": 102, "title": "aws_ec2_network_interface", "category": "resources", "slug": "aws_ec2_network_interface", "language": "hcl"},
-				{"id": 200, "title": "aws_ec2_instance", "category": "data-sources", "slug": "aws_ec2_instance", "language": "hcl"},
+				{"id": "100", "title": "aws_ec2_instance", "category": "resources", "slug": "aws_ec2_instance", "language": "hcl"},
+				{"id": "101", "title": "aws_s3_bucket", "category": "resources", "slug": "aws_s3_bucket", "language": "hcl"},
+				{"id": "102", "title": "aws_ec2_network_interface", "category": "resources", "slug": "aws_ec2_network_interface", "language": "hcl"},
+				{"id": "200", "title": "aws_ec2_instance", "category": "data-sources", "slug": "aws_ec2_instance", "language": "hcl"},
 			},
 		})
 		return json.Unmarshal(b, dst)

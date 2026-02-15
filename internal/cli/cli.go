@@ -126,6 +126,9 @@ func runProviderSearch(ctx context.Context, g globalFlags, args []string, stdout
 	if err := fs.Parse(args); err != nil {
 		return &provider.ValidationError{Message: err.Error()}
 	}
+	if extra := fs.Args(); len(extra) > 0 {
+		return &provider.ValidationError{Message: fmt.Sprintf("unexpected positional arguments: %s", strings.Join(extra, ", "))}
+	}
 
 	client, err := buildRegistryClient(g)
 	if err != nil {
@@ -150,13 +153,13 @@ func runProviderSearch(ctx context.Context, g globalFlags, args []string, stdout
 			"provider_doc_id": r.ProviderDocID,
 			"title":           r.Title,
 			"category":        r.Category,
-			"slug":            r.Slug,
+			"description":     r.Slug,
 			"provider":        r.Provider,
 			"namespace":       r.Namespace,
 			"version":         r.Version,
 		}
 	}
-	columns := []string{"provider_doc_id", "title", "category", "slug", "provider", "namespace", "version"}
+	columns := []string{"provider_doc_id", "title", "category", "description", "provider", "namespace", "version"}
 	return output.WriteSearch(stdout, format, items, len(items), columns)
 }
 
@@ -170,6 +173,9 @@ func runProviderGet(ctx context.Context, g globalFlags, args []string, stdout, s
 
 	if err := fs.Parse(args); err != nil {
 		return &provider.ValidationError{Message: err.Error()}
+	}
+	if extra := fs.Args(); len(extra) > 0 {
+		return &provider.ValidationError{Message: fmt.Sprintf("unexpected positional arguments: %s", strings.Join(extra, ", "))}
 	}
 
 	client, err := buildRegistryClient(g)
@@ -221,6 +227,9 @@ func runModuleSearch(ctx context.Context, g globalFlags, args []string, stdout, 
 	if err := fs.Parse(args); err != nil {
 		return &provider.ValidationError{Message: err.Error()}
 	}
+	if extra := fs.Args(); len(extra) > 0 {
+		return &provider.ValidationError{Message: fmt.Sprintf("unexpected positional arguments: %s", strings.Join(extra, ", "))}
+	}
 
 	client, err := buildRegistryClient(g)
 	if err != nil {
@@ -262,6 +271,9 @@ func runModuleGet(ctx context.Context, g globalFlags, args []string, stdout, _ i
 	if err := fs.Parse(args); err != nil {
 		return &provider.ValidationError{Message: err.Error()}
 	}
+	if extra := fs.Args(); len(extra) > 0 {
+		return &provider.ValidationError{Message: fmt.Sprintf("unexpected positional arguments: %s", strings.Join(extra, ", "))}
+	}
 
 	client, err := buildRegistryClient(g)
 	if err != nil {
@@ -273,14 +285,6 @@ func runModuleGet(ctx context.Context, g globalFlags, args []string, stdout, _ i
 		return wrapModuleError(err)
 	}
 
-	if format == "json" {
-		_, writeErr := stdout.Write(result.Raw)
-		if writeErr != nil {
-			return writeErr
-		}
-		_, writeErr = fmt.Fprintln(stdout)
-		return writeErr
-	}
 	return output.WriteDetail(stdout, format, result.ID, result.Content, "text/markdown")
 }
 
@@ -327,6 +331,9 @@ func runPolicySearch(ctx context.Context, g globalFlags, args []string, stdout, 
 	if err := fs.Parse(args); err != nil {
 		return &provider.ValidationError{Message: err.Error()}
 	}
+	if extra := fs.Args(); len(extra) > 0 {
+		return &provider.ValidationError{Message: fmt.Sprintf("unexpected positional arguments: %s", strings.Join(extra, ", "))}
+	}
 
 	client, err := buildRegistryClient(g)
 	if err != nil {
@@ -362,6 +369,9 @@ func runPolicyGet(ctx context.Context, g globalFlags, args []string, stdout, _ i
 	if err := fs.Parse(args); err != nil {
 		return &provider.ValidationError{Message: err.Error()}
 	}
+	if extra := fs.Args(); len(extra) > 0 {
+		return &provider.ValidationError{Message: fmt.Sprintf("unexpected positional arguments: %s", strings.Join(extra, ", "))}
+	}
 
 	client, err := buildRegistryClient(g)
 	if err != nil {
@@ -373,14 +383,6 @@ func runPolicyGet(ctx context.Context, g globalFlags, args []string, stdout, _ i
 		return wrapPolicyError(err)
 	}
 
-	if format == "json" {
-		_, writeErr := stdout.Write(result.Raw)
-		if writeErr != nil {
-			return writeErr
-		}
-		_, writeErr = fmt.Fprintln(stdout)
-		return writeErr
-	}
 	return output.WriteDetail(stdout, format, result.ID, result.Content, "text/markdown")
 }
 
@@ -425,6 +427,9 @@ func runGuideStyle(ctx context.Context, g globalFlags, args []string, stdout, _ 
 	if err := fs.Parse(args); err != nil {
 		return &provider.ValidationError{Message: err.Error()}
 	}
+	if extra := fs.Args(); len(extra) > 0 {
+		return &provider.ValidationError{Message: fmt.Sprintf("unexpected positional arguments: %s", strings.Join(extra, ", "))}
+	}
 
 	client, err := buildRegistryClient(g)
 	if err != nil {
@@ -449,6 +454,9 @@ func runGuideModuleDev(ctx context.Context, g globalFlags, args []string, stdout
 
 	if err := fs.Parse(args); err != nil {
 		return &provider.ValidationError{Message: err.Error()}
+	}
+	if extra := fs.Args(); len(extra) > 0 {
+		return &provider.ValidationError{Message: fmt.Sprintf("unexpected positional arguments: %s", strings.Join(extra, ", "))}
 	}
 
 	client, err := buildRegistryClient(g)

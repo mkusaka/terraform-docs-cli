@@ -39,7 +39,7 @@ type v1ProviderDocsResponse struct {
 }
 
 type v1ProviderDoc struct {
-	ID       int    `json:"id"`
+	ID       string `json:"id"`
 	Title    string `json:"title"`
 	Category string `json:"category"`
 	Slug     string `json:"slug"`
@@ -143,7 +143,7 @@ func searchV1(ctx context.Context, client APIClient, opts SearchOptions, version
 			continue
 		}
 		results = append(results, SearchResult{
-			ProviderDocID: fmt.Sprintf("%d", doc.ID),
+			ProviderDocID: doc.ID,
 			Title:         doc.Title,
 			Category:      doc.Category,
 			Slug:          doc.Slug,
