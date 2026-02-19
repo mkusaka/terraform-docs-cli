@@ -49,6 +49,10 @@ func (e *CacheInitError) Unwrap() error { return e.Err }
 func Execute(args []string, stdout, stderr io.Writer) int {
 	g, rest, err := parseGlobalFlags(args)
 	if err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			printUsage(stdout)
+			return 0
+		}
 		_, _ = fmt.Fprintln(stderr, err)
 		return 1
 	}
@@ -739,10 +743,33 @@ func mapErrorToExitCode(err error) int {
 func printUsage(w io.Writer) {
 	_, _ = fmt.Fprintln(w, `usage: tfdc [global flags] <group> <command> [flags]
 
+commands:
   provider  search | get | export
   module    search | get
   policy    search | get
-  guide     style | module-dev`)
+  guide     style | module-dev
+
+global flags:
+  -chdir string
+        switch to a different working directory before executing
+  -timeout duration
+        HTTP timeout (default 10s)
+  -retry int
+        retry count (default 3)
+  -registry-url string
+        registry base URL (default "https://registry.terraform.io")
+  -insecure
+        skip TLS verification
+  -user-agent string
+        custom User-Agent (default "tfdc/dev")
+  -debug
+        enable debug log
+  -cache-dir string
+        cache directory (default "~/.cache/tfdc")
+  -cache-ttl duration
+        cache TTL (default 24h0m0s)
+  -no-cache
+        disable cache`)
 }
 
 func expandHomeDir(path string) (string, error) {
